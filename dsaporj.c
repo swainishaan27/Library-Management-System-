@@ -145,7 +145,100 @@ void printBook(struct Book book) {
 }
 
 // Traverse the nodes
+// Traverse the nodes
+void traversal(struct BTreeNode *myNode) {
+    int i;
+    if (myNode) {
+        for (i = 0; i < myNode->count; i++) {
+            traversal(myNode->link[i]);
+            printBook(myNode->books[i + 1]);
+        }
+        traversal(myNode->link[i]);
+    }
+}
+// Delete node
 
+void deleteBook(char *ISBN, struct BTreeNode *node, int pos) {
+    if (!node) {
+        printf("Book with ISBN %s not found\n", ISBN);
+        return;
+    }
+
+    // Find the book in the current node
+    int i;
+    for (i = 1; i <= node->count; i++) {
+        if (strcmp(ISBN, node->books[i].ISBN) == 0) {
+            // Book found, perform deletion
+            for (int j = i; j < node->count; j++) {
+                node->books[j] = node->books[j + 1];
+                node->link[j] = node->link[j + 1];
+            }
+            node->count--;
+            printf("Book with ISBN %s has been deleted\n", ISBN);
+            return;
+        }
+    }
+
+    int childPos;
+    for (childPos = 0; childPos <= node->count; childPos++) {
+        if (strcmp(ISBN, node->books[childPos].ISBN) < 0)
+            break;
+    }
+
+    deleteBook(ISBN, node->link[childPos], pos);
+}
+struct BTreeNode* findNodeByISBN(char *ISBN, struct BTreeNode *node) {
+    if (!node) {
+        return NULL;
+    }
+
+    int pos;
+    if (strcmp(ISBN, node->books[1].ISBN) < 0) {
+        pos = 0;
+    } else {
+        for (pos = node->count; (strcmp(ISBN, node->books[pos].ISBN) < 0 && pos > 1); pos--)
+            ;
+        if (strcmp(ISBN, node->books[pos].ISBN) == 0) {
+            return node; // Node containing the ISBN is found
+        }
+    }
+    return findNodeByISBN(ISBN, node->link[pos]); // Recursively search in the appropriate child node
+}
+void delete(char *ISBN,struct BtreeNode *root) {
+    struct BTreeNode *currentNode = findNodeByISBN(ISBN, root);
+    if (!currentNode) {
+        printf("Book with ISBN %s not found\n", ISBN);
+        return;
+    }
+
+    int pos = 0;
+    search(ISBN, &pos, currentNode);
+
+    if (pos == 0) {
+        printf("Book with ISBN %s not found\n", ISBN);
+        return;
+    }
+
+    deleteBook(ISBN, currentNode, pos);
+
+    printf("After deletion:\n");
+    traversal(root);
+}
+
+void display(struct BTreeNode *node, int level) {
+    if (node != NULL) {
+        int i;
+        for (i = node->count; i >= 1; i--) {
+            display(node->link[i], level + 1);
+            printf("\n");
+            for (int j = 0; j < level; j++) {
+                printf("    ");
+            }
+            printf("(%s) %s - %s\n", node->books[i].ISBN, node->books[i].title, node->books[i].author);
+        }
+        display(node->link[0], level + 1);
+    }
+}
 int main() {
     struct Book book1 = {"Book1", "Author1", "111111111", 1};
     struct Book book2 = {"Book2", "Author2", "222222222", 1};
